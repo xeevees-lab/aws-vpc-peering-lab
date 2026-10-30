@@ -159,21 +159,7 @@ All tests were run from inside the private hosts against **private** destination
 
 **SSH to App-B:** with ProxyJump, the bastion itself opens the TCP connection to `10.20.1.10:22`. That is why the public subnet's table also needs `10.20.0.0/16 → pcx`, and why App-B's SSH rule allows the bastion's private IP `10.10.1.10/32` (not the laptop's IP).
 
-## 9. Viva questions
-
-**1. Why is the return route needed?**
-Routing is one-directional. The route in VPC A only gets packets *to* VPC B. Without `10.10.0.0/16 → pcx` in VPC B's route table, App-B's replies have no path back, so requests arrive but responses are dropped and the test still fails.
-
-**2. Why is the App-B SSH source the bastion's private IP?**
-ProxyJump does not forward the laptop's packets. The bastion opens a new TCP connection to App-B from its own interface. App-B therefore sees source `10.10.1.10`, so the rule must allow `10.10.1.10/32`. The laptop's public IP never reaches VPC B.
-
-**3. Why does Active peering not guarantee a successful ping?**
-The peering connection is only the link. Traffic also needs (a) routes in **both** VPCs' subnet route tables pointing to the `pcx`, and (b) security group rules on the destination allowing the protocol. The controlled-failure test shows this: peering stayed Active, yet removing one SG rule stopped the ping.
-
-**4. Can VPC B use VPC A's internet gateway over peering?**
-No. VPC peering does not support edge-to-edge routing. VPC B cannot use VPC A's internet gateway, NAT gateway, VPN or Direct Connect. Peering is also non-transitive: if A is peered with B and A with C, B still cannot reach C.
-
-## 10. Cleanup
+## 9. Cleanup
 
 Completed after all evidence was captured:
 
@@ -184,7 +170,7 @@ Completed after all evidence was captured:
 
 No NAT gateway or Elastic IP was used.
 
-## 11. What I learned
+## 10. What I learned
 
 - A VPC peering connection is only a link. Reachability needs routes on **both** sides and matching security group rules.
 - Every subnet that originates traffic to the peer needs its own route, including the bastion's public subnet when it is used as an SSH jump host.
@@ -192,7 +178,7 @@ No NAT gateway or Elastic IP was used.
 - Testing a failure on purpose is the clearest way to prove which control is responsible for allowing traffic.
 - SSH ProxyJump allows administration of private instances without ever copying a private key to a server.
 
-## 12. Repository structure
+## 11. Repository structure
 
 ```
 aws-vpc-peering-lab/
